@@ -5,7 +5,8 @@
   <title>Global Meeting & World Clock</title>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; padding: 20px; color: #333; }
-    h1, h2 { color: #1e293b; }
+    .header-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    h1, h2 { color: #1e293b; margin-top: 0; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
     .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .time { font-size: 1.8rem; font-weight: bold; color: #2563eb; margin-top: 5px; }
@@ -14,19 +15,30 @@
     .badge { font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
     .badge-ok { background: #dcfce7; color: #166534; }
     .badge-warn { background: #fee2e2; color: #991b1b; }
-    input[type="time"], input[type="date"] { padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    input[type="time"], input[type="date"], select { padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    .lang-select { background: white; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <h1>🌍 Relógio Global & Agendador</h1>
+  <div class="header-container">
+    <h1 id="txt-title">🌍 Relógio Global & Agendador</h1>
+    <div>
+      <select id="langSelect" class="lang-select">
+        <option value="pt-BR" selected>🌐 Português</option>
+        <option value="en-US">🌐 English</option>
+        <option value="de-DE">🌐 Deutsch</option>
+        <option value="tr-TR">🌐 Türkçe</option>
+      </select>
+    </div>
+  </div>
 
-  <h2>Horários Agora</h2>
+  <h2 id="txt-clocks-title">Horários Agora</h2>
   <div class="grid" id="clocks"></div>
 
   <div class="sim-card">
-    <h2>Simulador de Reunião</h2>
-    <p>Escolha a data e digite ou selecione o horário no <strong>Brasil</strong> (ex: 09:30, 14:00):</p>
+    <h2 id="txt-sim-title">Simulador de Reunião</h2>
+    <p id="txt-sim-desc">Escolha a data e digite ou selecione o horário no <strong>Brasil</strong>:</p>
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <input type="date" id="meetingDate">
       <input type="time" id="meetingTime" value="10:00" step="60">
@@ -36,6 +48,42 @@
   </div>
 
   <script>
+    // Dicionário de traduções
+    const translations = {
+      "pt-BR": {
+        title: "🌍 Relógio Global & Agendador",
+        clocksTitle: "Horários Agora",
+        simTitle: "Simulador de Reunião",
+        simDesc: "Escolha a data e digite ou selecione o horário no <strong>Brasil</strong>:",
+        businessHours: "Horário Comercial",
+        offHours: "Fora do Expediente"
+      },
+      "en-US": {
+        title: "🌍 Global Clock & Meeting Planner",
+        clocksTitle: "Current Time",
+        simTitle: "Meeting Simulator",
+        simDesc: "Select the date and type or select the time in <strong>Brazil</strong>:",
+        businessHours: "Business Hours",
+        offHours: "Out of Hours"
+      },
+      "de-DE": {
+        title: "🌍 Weltuhr & Meeting-Planer",
+        clocksTitle: "Aktuelle Uhrzeit",
+        simTitle: "Meeting-Simulator",
+        simDesc: "Wählen Sie das Datum und die Uhrzeit in <strong>Brasilien</strong>:",
+        businessHours: "Arbeitszeit",
+        offHours: "Außerhalb der Arbeitszeit"
+      },
+      "tr-TR": {
+        title: "🌍 Dünya Saati ve Toplantı Planlayıcı",
+        clocksTitle: "Şu Anki Saatler",
+        simTitle: "Toplantı Simülatörü",
+        simDesc: "Tarihi seçin ve <strong>Brezilya</strong> saatini girin veya seçin:",
+        businessHours: "Mesai Saatleri",
+        offHours: "Mesai Dışı"
+      }
+    };
+
     const locations = [
       { name: "Brasil (São Paulo)", zone: "America/Sao_Paulo", flag: "🇧🇷" },
       { name: "Alemanha (Berlim)", zone: "Europe/Berlin", flag: "🇩🇪" },
@@ -43,18 +91,28 @@
       { name: "Índia (Nova Déli)", zone: "Asia/Kolkata", flag: "🇮🇳" }
     ];
 
+    let currentLang = "pt-BR";
+
+    function updateLanguageUI() {
+      const t = translations[currentLang];
+      document.getElementById("txt-title").innerHTML = t.title;
+      document.getElementById("txt-clocks-title").innerText = t.clocksTitle;
+      document.getElementById("txt-sim-title").innerText = t.simTitle;
+      document.getElementById("txt-sim-desc").innerHTML = t.simDesc;
+    }
+
     function updateLiveClocks() {
       const container = document.getElementById("clocks");
       const now = new Date();
       
       container.innerHTML = locations.map(loc => {
-        const timeStr = new Intl.DateTimeFormat("pt-BR", {
+        const timeStr = new Intl.DateTimeFormat(currentLang, {
           timeZone: loc.zone,
           hour: "2-digit", minute: "2-digit", second: "2-digit",
           hour12: false
         }).format(now);
 
-        const dateStr = new Intl.DateTimeFormat("pt-BR", {
+        const dateStr = new Intl.DateTimeFormat(currentLang, {
           timeZone: loc.zone,
           day: "2-digit", month: "short"
         }).format(now);
@@ -73,7 +131,6 @@
       const dateVal = document.getElementById("meetingDate").value;
       const timeVal = document.getElementById("meetingTime").value;
       
-      // Valida se o horário foi digitado/selecionado corretamente
       if (!dateVal || !timeVal) return;
 
       const [year, month, day] = dateVal.split('-').map(Number);
@@ -83,15 +140,16 @@
 
       const targetDate = new Date(year, month - 1, day, hours, minutes);
       const resultsContainer = document.getElementById("simulationResults");
+      const t = translations[currentLang];
       
       resultsContainer.innerHTML = locations.map(loc => {
-        const localTimeStr = new Intl.DateTimeFormat("pt-BR", {
+        const localTimeStr = new Intl.DateTimeFormat(currentLang, {
           timeZone: loc.zone,
           hour: "2-digit", minute: "2-digit",
           hour12: false
         }).format(targetDate);
 
-        const localDateStr = new Intl.DateTimeFormat("pt-BR", {
+        const localDateStr = new Intl.DateTimeFormat(currentLang, {
           timeZone: loc.zone,
           weekday: "short", day: "2-digit", month: "short"
         }).format(targetDate);
@@ -103,7 +161,7 @@
 
         const isBusinessHours = localHour >= 8 && localHour < 18;
         const badgeClass = isBusinessHours ? "badge-ok" : "badge-warn";
-        const badgeText = isBusinessHours ? "Horário Comercial" : "Fora do Expediente";
+        const badgeText = isBusinessHours ? t.businessHours : t.offHours;
 
         return `
           <div class="sim-row">
@@ -120,20 +178,28 @@
       }).join('');
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("meetingDate").value = today;
-
-    setInterval(updateLiveClocks, 1000);
-    updateLiveClocks();
+    // Eventos
+    document.getElementById("langSelect").addEventListener("change", (e) => {
+      currentLang = e.target.value;
+      updateLanguageUI();
+      updateLiveClocks();
+      calculateMeeting();
+    });
 
     const timeInput = document.getElementById("meetingTime");
     const dateInput = document.getElementById("meetingDate");
 
-    // Escuta digitação e seleção em tempo real
     timeInput.addEventListener("input", calculateMeeting);
     timeInput.addEventListener("keyup", calculateMeeting);
     dateInput.addEventListener("change", calculateMeeting);
-    
+
+    // Inicialização
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+
+    updateLanguageUI();
+    setInterval(updateLiveClocks, 1000);
+    updateLiveClocks();
     calculateMeeting();
   </script>
 
