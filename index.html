@@ -38,7 +38,7 @@
 
   <div class="sim-card">
     <h2 id="txt-sim-title">Simulador de Reunião</h2>
-    <p id="txt-sim-desc">Escolha a data e digite ou selecione o horário no <strong>Brasil</strong>:</p>
+    <p id="txt-sim-desc">Escolha a data e digite ou selecione o horário em <strong id="origin-country-name">Brasil</strong>:</p>
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <input type="date" id="meetingDate">
       <input type="time" id="meetingTime" value="10:00" step="60">
@@ -48,13 +48,15 @@
   </div>
 
   <script>
-    // Dicionário de traduções
+    // Dicionário de traduções e vínculo com o fuso de origem de cada idioma
     const translations = {
       "pt-BR": {
         title: "🌍 Relógio Global & Agendador",
         clocksTitle: "Horários Agora",
         simTitle: "Simulador de Reunião",
-        simDesc: "Escolha a data e digite ou selecione o horário no <strong>Brasil</strong>:",
+        simDesc: "Escolha a data e digite ou selecione o horário em ",
+        originCountry: "Brasil",
+        originZone: "America/Sao_Paulo",
         businessHours: "Horário Comercial",
         offHours: "Fora do Expediente"
       },
@@ -62,7 +64,9 @@
         title: "🌍 Global Clock & Meeting Planner",
         clocksTitle: "Current Time",
         simTitle: "Meeting Simulator",
-        simDesc: "Select the date and type or select the time in <strong>Brazil</strong>:",
+        simDesc: "Select the date and type or select the time in ",
+        originCountry: "Germany",
+        originZone: "Europe/Berlin",
         businessHours: "Business Hours",
         offHours: "Out of Hours"
       },
@@ -70,7 +74,9 @@
         title: "🌍 Weltuhr & Meeting-Planer",
         clocksTitle: "Aktuelle Uhrzeit",
         simTitle: "Meeting-Simulator",
-        simDesc: "Wählen Sie das Datum und die Uhrzeit in <strong>Brasilien</strong>:",
+        simDesc: "Wählen Sie das Datum und die Uhrzeit in ",
+        originCountry: "Deutschland",
+        originZone: "Europe/Berlin",
         businessHours: "Arbeitszeit",
         offHours: "Außerhalb der Arbeitszeit"
       },
@@ -78,7 +84,9 @@
         title: "🌍 Dünya Saati ve Toplantı Planlayıcı",
         clocksTitle: "Şu Anki Saatler",
         simTitle: "Toplantı Simülatörü",
-        simDesc: "Tarihi seçin ve <strong>Brezilya</strong> saatini girin veya seçin:",
+        simDesc: "Tarihi seçin ve saatini girin: ",
+        originCountry: "Türkiye",
+        originZone: "Europe/Istanbul",
         businessHours: "Mesai Saatleri",
         offHours: "Mesai Dışı"
       }
@@ -98,7 +106,9 @@
       document.getElementById("txt-title").innerHTML = t.title;
       document.getElementById("txt-clocks-title").innerText = t.clocksTitle;
       document.getElementById("txt-sim-title").innerText = t.simTitle;
-      document.getElementById("txt-sim-desc").innerHTML = t.simDesc;
+      
+      const descElement = document.getElementById("txt-sim-desc");
+      descElement.innerHTML = `${t.simDesc}<strong id="origin-country-name">${t.originCountry}</strong>:`;
     }
 
     function updateLiveClocks() {
@@ -127,20 +137,45 @@
       }).join('');
     }
 
+    // Função utilitária para converter data/hora digitada no fuso de origem escolhido para UTC
+    function getUTCDateFromLocalTime(dateStr, timeStr, timeZone) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+
+      // Usamos Date.UTC para criar uma referência limpa
+      const dummyDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+      
+      // Descobrimos o offset real do fuso de origem naquela data específica
+      const invFormat = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: 'numeric', minute: 'numeric', second: 'numeric',
+        hour12: false
+      });
+      
+      const parts = Object.fromEntries(invFormat.formatToParts(dummyDate).map(p => [p.type, p.value]));
+      const localAsUtc = Date.UTC(
+        parseInt(parts.year),
+        parseInt(parts.month) - 1,
+        parseInt(parts.day),
+        parseInt(parts.hour) === 24 ? 0 : parseInt(parts.hour),
+        parseInt(parts.minute)
+      );
+      
+      const diff = dummyDate.getTime() - localAsUtc;
+      return new Date(dummyDate.getTime() + diff);
+    }
+
     function calculateMeeting() {
       const dateVal = document.getElementById("meetingDate").value;
       const timeVal = document.getElementById("meetingTime").value;
       
       if (!dateVal || !timeVal) return;
 
-      const [year, month, day] = dateVal.split('-').map(Number);
-      const [hours, minutes] = timeVal.split(':').map(Number);
-      
-      if (isNaN(hours) || isNaN(minutes)) return;
-
-      const targetDate = new Date(year, month - 1, day, hours, minutes);
-      const resultsContainer = document.getElementById("simulationResults");
       const t = translations[currentLang];
+      const targetDate = getUTCDateFromLocalTime(dateVal, timeVal, t.originZone);
+
+      const resultsContainer = document.getElementById("simulationResults");
       
       resultsContainer.innerHTML = locations.map(loc => {
         const localTimeStr = new Intl.DateTimeFormat(currentLang, {
