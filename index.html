@@ -26,17 +26,16 @@
 
   <div class="sim-card">
     <h2>Simulador de Reunião</h2>
-    <p>Escolha a data e o horário no <strong>Brasil</strong>:</p>
+    <p>Escolha a data e digite ou selecione o horário no <strong>Brasil</strong> (ex: 09:30, 14:00):</p>
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <input type="date" id="meetingDate">
-      <input type="time" id="meetingTime" value="10:00">
+      <input type="time" id="meetingTime" value="10:00" step="60">
     </div>
 
     <div id="simulationResults"></div>
   </div>
 
   <script>
-    // Configuração dos países/fusos baseados na IANA Time Zone Database
     const locations = [
       { name: "Brasil (São Paulo)", zone: "America/Sao_Paulo", flag: "🇧🇷" },
       { name: "Alemanha (Berlim)", zone: "Europe/Berlin", flag: "🇩🇪" },
@@ -44,7 +43,6 @@
       { name: "Índia (Nova Déli)", zone: "Asia/Kolkata", flag: "🇮🇳" }
     ];
 
-    // 1. Atualizar os relógios digitais em tempo real
     function updateLiveClocks() {
       const container = document.getElementById("clocks");
       const now = new Date();
@@ -71,19 +69,19 @@
       }).join('');
     }
 
-    // 2. Simular horário da reunião
     function calculateMeeting() {
       const dateVal = document.getElementById("meetingDate").value;
       const timeVal = document.getElementById("meetingTime").value;
+      
+      // Valida se o horário foi digitado/selecionado corretamente
       if (!dateVal || !timeVal) return;
 
-      // Criar o objeto Date considerando o fuso local do Brasil
       const [year, month, day] = dateVal.split('-').map(Number);
       const [hours, minutes] = timeVal.split(':').map(Number);
       
-      // Data/Hora interpretada como horário local do Brasil
-      const targetDate = new Date(year, month - 1, day, hours, minutes);
+      if (isNaN(hours) || isNaN(minutes)) return;
 
+      const targetDate = new Date(year, month - 1, day, hours, minutes);
       const resultsContainer = document.getElementById("simulationResults");
       
       resultsContainer.innerHTML = locations.map(loc => {
@@ -98,7 +96,6 @@
           weekday: "short", day: "2-digit", month: "short"
         }).format(targetDate);
 
-        // Extrair hora local para validar se está no expediente (08:00 - 18:00)
         const localHour = parseInt(new Intl.DateTimeFormat("en-US", {
           timeZone: loc.zone,
           hour: "numeric", hour12: false
@@ -123,15 +120,20 @@
       }).join('');
     }
 
-    // Inicialização
     const today = new Date().toISOString().split('T')[0];
     document.getElementById("meetingDate").value = today;
 
     setInterval(updateLiveClocks, 1000);
     updateLiveClocks();
 
-    document.getElementById("meetingDate").addEventListener("change", calculateMeeting);
-    document.getElementById("meetingTime").addEventListener("input", calculateMeeting);
+    const timeInput = document.getElementById("meetingTime");
+    const dateInput = document.getElementById("meetingDate");
+
+    // Escuta digitação e seleção em tempo real
+    timeInput.addEventListener("input", calculateMeeting);
+    timeInput.addEventListener("keyup", calculateMeeting);
+    dateInput.addEventListener("change", calculateMeeting);
+    
     calculateMeeting();
   </script>
 
