@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Global Meeting & World Clock</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; padding: 20px; color: #333; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; padding: 20px; color: #333; min-height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
+    .content { flex: 1; }
     .header-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     h1, h2 { color: #1e293b; margin-top: 0; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
@@ -17,38 +18,47 @@
     .badge-warn { background: #fee2e2; color: #991b1b; }
     input[type="time"], input[type="date"], select { padding: 8px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
     .lang-select { background: white; font-weight: bold; cursor: pointer; }
+    
+    /* Estilo do Rodapé */
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 0.9rem; }
+    footer strong { color: #1e293b; }
   </style>
 </head>
 <body>
 
-  <div class="header-container">
-    <h1 id="txt-title">🌍 Relógio Global & Agendador</h1>
-    <div>
-      <select id="langSelect" class="lang-select">
-        <option value="pt-BR" selected>🌐 Português</option>
-        <option value="en-US">🌐 English</option>
-        <option value="de-DE">🌐 Deutsch</option>
-        <option value="tr-TR">🌐 Türkçe</option>
-      </select>
+  <div class="content">
+    <div class="header-container">
+      <h1 id="txt-title">🌍 Relógio Global & Agendador</h1>
+      <div>
+        <select id="langSelect" class="lang-select">
+          <option value="pt-BR" selected>🌐 Português</option>
+          <option value="en-US">🌐 English</option>
+          <option value="de-DE">🌐 Deutsch</option>
+          <option value="tr-TR">🌐 Türkçe</option>
+        </select>
+      </div>
+    </div>
+
+    <h2 id="txt-clocks-title">Horários Agora</h2>
+    <div class="grid" id="clocks"></div>
+
+    <div class="sim-card">
+      <h2 id="txt-sim-title">Simulador de Reunião</h2>
+      <p id="txt-sim-desc">Escolha a data e digite ou selecione o horário em <strong id="origin-country-name">Brasil</strong>:</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input type="date" id="meetingDate">
+        <input type="time" id="meetingTime" value="10:00" step="60">
+      </div>
+
+      <div id="simulationResults"></div>
     </div>
   </div>
 
-  <h2 id="txt-clocks-title">Horários Agora</h2>
-  <div class="grid" id="clocks"></div>
-
-  <div class="sim-card">
-    <h2 id="txt-sim-title">Simulador de Reunião</h2>
-    <p id="txt-sim-desc">Escolha a data e digite ou selecione o horário em <strong id="origin-country-name">Brasil</strong>:</p>
-    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-      <input type="date" id="meetingDate">
-      <input type="time" id="meetingTime" value="10:00" step="60">
-    </div>
-
-    <div id="simulationResults"></div>
-  </div>
+  <footer>
+    <span id="txt-footer">Desenvolvido por</span> <strong>Daniel Antoniasi</strong>
+  </footer>
 
   <script>
-    // Dicionário de traduções e vínculo com o fuso de origem de cada idioma
     const translations = {
       "pt-BR": {
         title: "🌍 Relógio Global & Agendador",
@@ -58,7 +68,8 @@
         originCountry: "Brasil",
         originZone: "America/Sao_Paulo",
         businessHours: "Horário Comercial",
-        offHours: "Fora do Expediente"
+        offHours: "Fora do Expediente",
+        developedBy: "Desenvolvido por"
       },
       "en-US": {
         title: "🌍 Global Clock & Meeting Planner",
@@ -68,7 +79,8 @@
         originCountry: "Germany",
         originZone: "Europe/Berlin",
         businessHours: "Business Hours",
-        offHours: "Out of Hours"
+        offHours: "Out of Hours",
+        developedBy: "Developed by"
       },
       "de-DE": {
         title: "🌍 Weltuhr & Meeting-Planer",
@@ -78,7 +90,8 @@
         originCountry: "Deutschland",
         originZone: "Europe/Berlin",
         businessHours: "Arbeitszeit",
-        offHours: "Außerhalb der Arbeitszeit"
+        offHours: "Außerhalb der Arbeitszeit",
+        developedBy: "Entwickelt von"
       },
       "tr-TR": {
         title: "🌍 Dünya Saati ve Toplantı Planlayıcı",
@@ -88,7 +101,8 @@
         originCountry: "Türkiye",
         originZone: "Europe/Istanbul",
         businessHours: "Mesai Saatleri",
-        offHours: "Mesai Dışı"
+        offHours: "Mesai Dışı",
+        developedBy: "Geliştiren:"
       }
     };
 
@@ -106,6 +120,7 @@
       document.getElementById("txt-title").innerHTML = t.title;
       document.getElementById("txt-clocks-title").innerText = t.clocksTitle;
       document.getElementById("txt-sim-title").innerText = t.simTitle;
+      document.getElementById("txt-footer").innerText = t.developedBy;
       
       const descElement = document.getElementById("txt-sim-desc");
       descElement.innerHTML = `${t.simDesc}<strong id="origin-country-name">${t.originCountry}</strong>:`;
@@ -137,15 +152,12 @@
       }).join('');
     }
 
-    // Função utilitária para converter data/hora digitada no fuso de origem escolhido para UTC
     function getUTCDateFromLocalTime(dateStr, timeStr, timeZone) {
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hours, minutes] = timeStr.split(':').map(Number);
 
-      // Usamos Date.UTC para criar uma referência limpa
       const dummyDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
       
-      // Descobrimos o offset real do fuso de origem naquela data específica
       const invFormat = new Intl.DateTimeFormat('en-US', {
         timeZone,
         year: 'numeric', month: 'numeric', day: 'numeric',
@@ -213,7 +225,6 @@
       }).join('');
     }
 
-    // Eventos
     document.getElementById("langSelect").addEventListener("change", (e) => {
       currentLang = e.target.value;
       updateLanguageUI();
@@ -228,7 +239,6 @@
     timeInput.addEventListener("keyup", calculateMeeting);
     dateInput.addEventListener("change", calculateMeeting);
 
-    // Inicialização
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
 
